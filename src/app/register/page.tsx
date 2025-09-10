@@ -1,14 +1,11 @@
-import React from 'react';
 import RegistrationForm from '@/components/RegistrationForm';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Parallex Register - Owoojumo Web Register',
+  title: 'Register - Owoojumo Web Register',
   description: 'Create a new account with Owoojumo',
 };
 
-const HomePage = () => {
+export default function RegisterPage() {
   return <RegistrationForm />;
-};
-
-export default HomePage;
+}
