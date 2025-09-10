@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Select from 'react-select';
 import { ChevronLeftIcon } from '@heroicons/react/24/solid';
 import {
   Region,
@@ -50,35 +53,58 @@ const TextareaWithLabel = ({
   </div>
 );
 
+interface SelectWithLabelProps {
+  label: string;
+  options: DropdownOption[];
+  value: string;
+  onChangeValue: (value: string) => void;
+  disabled?: boolean;
+}
+
 const SelectWithLabel = ({
   label,
   options,
+  value,
+  onChangeValue,
   disabled,
-  ...props
-}: {
-  label: string;
-  options: DropdownOption[];
-  disabled?: boolean;
-} & React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <div className="w-full">
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      {label}
-    </label>
-    <select
-      className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${disabled ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-      disabled={disabled}
-      {...props}
-    >
-      <option value="">Select {label}</option>
-      {options.map((option) => (
-        <option key={option.key} value={option.key}>
-          {option.value}
-        </option>
-      ))}
-    </select>
-  </div>
-);
+}: SelectWithLabelProps) => {
+  const rsOptions = options.map((o) => ({ value: o.key, label: o.value }));
+  const selected = rsOptions.find((o) => o.value === value) ?? null;
+
+  return (
+    <div className="w-full">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <Select
+        classNamePrefix="rs"
+        isDisabled={disabled}
+        isSearchable
+        options={rsOptions}
+        value={selected}
+        placeholder={`Select ${label}`}
+        onChange={(opt) => onChangeValue((opt as { value: string; label: string } | null)?.value ?? '')}
+        styles={{
+          control: (base, state) => ({
+            ...base,
+            minHeight: 48,
+            borderRadius: 12,
+            backgroundColor: '#F9FAFB',
+            borderColor: state.isFocused ? '#3B82F6' : '#E5E7EB',
+            boxShadow: state.isFocused ? '0 0 0 2px rgba(59,130,246,0.25)' : 'none',
+            ':hover': { borderColor: '#3B82F6' },
+          }),
+          menu: (base) => ({ ...base, borderRadius: 12, overflow: 'hidden' }),
+          option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected ? '#DBEAFE' : state.isFocused ? '#EFF6FF' : 'white',
+            color: '#111827',
+          }),
+        }}
+      />
+    </div>
+  );
+};
 
 const Toast = ({
   message,
@@ -285,10 +311,11 @@ export default function RegistrationForm() {
           router.push('/');
         }, 2000);
       } else {
-        showToast(data.message || 'Registration failed', 'error');
+        // @ts-expect-error unknown error
+        showToast(data.response?.data?.message || 'Registration failed', 'error');
       }
-    } catch {
-      showToast('Registration failed', 'error');
+    } catch (error: any) {
+      showToast('Registration failed ' + error.response?.data?.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -323,137 +350,138 @@ export default function RegistrationForm() {
             >
               <ChevronLeftIcon className="w-5 h-5 text-blue-600" />
             </button>
-            <h1 className="text-2xl font-bold text-blue-600">Create new account</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-blue-600">Create new account</h1>
+            </div>
           </div>
         </div>
 
         {/* Form */}
         <div className="px-5 pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <InputWithLabel
-              label="First Name"
-              type="text"
-              placeholder="Enter your first name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
+            <fieldset disabled={loading} className="space-y-4">
+              <InputWithLabel
+                label="First Name"
+                type="text"
+                placeholder="Enter your first name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
 
-            <InputWithLabel
-              label="Surname"
-              type="text"
-              placeholder="Enter your surname"
-              value={surname}
-              onChange={(e) => setSurname(e.target.value)}
-              required
-            />
+              <InputWithLabel
+                label="Surname"
+                type="text"
+                placeholder="Enter your surname"
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                required
+              />
 
-            <InputWithLabel
-              label="Phone Number"
-              type="tel"
-              placeholder="Enter your phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
+              <InputWithLabel
+                label="Phone Number"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
 
-            <InputWithLabel
-              label="Email (Optional)"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+              <InputWithLabel
+                label="Email (Optional)"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
 
-            <InputWithLabel
-              label="BVN"
-              type="text"
-              placeholder="Enter your BVN"
-              value={bvn}
-              onChange={(e) => setBvn(e.target.value)}
-              maxLength={11}
-              required
-            />
+              <InputWithLabel
+                label="BVN"
+                type="text"
+                placeholder="Enter your BVN"
+                value={bvn}
+                onChange={(e) => setBvn(e.target.value)}
+                maxLength={11}
+                required
+              />
 
-            <InputWithLabel
-              label="NIN"
-              type="text"
-              placeholder="Enter your NIN"
-              value={nin}
-              onChange={(e) => setNin(e.target.value)}
-              required
-            />
+              <InputWithLabel
+                label="NIN"
+                type="text"
+                placeholder="Enter your NIN"
+                value={nin}
+                onChange={(e) => setNin(e.target.value)}
+                required
+              />
 
-            <TextareaWithLabel
-              label="Address"
-              placeholder="Enter your address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
+              <TextareaWithLabel
+                label="Address"
+                placeholder="Enter your address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
 
-            <SelectWithLabel
-              label="Region"
-              options={regionData}
-              value={selectedRegion}
-              onChange={(e) => {
-                setSelectedRegion(e.target.value);
-                setSelectedZone('');
-              }}
-              required
-            />
+              <SelectWithLabel
+                label="Region"
+                options={regionData}
+                value={selectedRegion}
+                onChangeValue={(val) => {
+                  setSelectedRegion(val);
+                  setSelectedZone('');
+                }}
+              />
 
-            <SelectWithLabel
-              label="Zone"
-              options={zoneData}
-              value={selectedZone}
-              onChange={(e) => setSelectedZone(e.target.value)}
-              disabled={!selectedRegion}
-              required
-            />
+              <SelectWithLabel
+                label="Zone"
+                options={zoneData}
+                value={selectedZone}
+                onChangeValue={(val) => setSelectedZone(val)}
+                disabled={!selectedRegion}
+              />
 
-            <SelectWithLabel
-              label="Bank"
-              options={bankData}
-              value={selectedBank}
-              onChange={(e) => setSelectedBank(e.target.value)}
-              required
-            />
+              <SelectWithLabel
+                label="Bank"
+                options={bankData}
+                value={selectedBank}
+                onChangeValue={(val) => setSelectedBank(val)}
+              />
 
-            <InputWithLabel
-              label="Account Number"
-              type="text"
-              placeholder="Enter account number"
-              value={accountNumber}
-              onChange={(e) => {
-                setAccountNumber(e.target.value);
-                setValidationError('');
-                setAccountName('');
-              }}
-              maxLength={10}
-              required
-            />
+              <InputWithLabel
+                label="Account Number"
+                type="text"
+                placeholder="Enter account number"
+                value={accountNumber}
+                onChange={(e) => {
+                  setAccountNumber(e.target.value);
+                  setValidationError('');
+                  setAccountName('');
+                }}
+                maxLength={10}
+                required
+              />
 
-            {validationError && (
-              <p className="text-red-500 text-center text-sm mt-2">
-                {validationError}
-              </p>
-            )}
+              {validationError && (
+                <p className="text-red-500 text-center text-sm mt-2">
+                  {validationError}
+                </p>
+              )}
 
-            {accountName && (
-              <p className="text-green-600 text-center text-sm font-medium mt-2">
-                {accountName}
-              </p>
-            )}
+              {accountName && (
+                <p className="text-green-600 text-center text-sm font-medium mt-2">
+                  {accountName}
+                </p>
+              )}
 
-            <InputWithLabel
-              label="Terminal ID"
-              type="text"
-              placeholder="Enter Terminal ID"
-              value={parallex_id}
-              onChange={(e) => setParallexId(e.target.value)}
-              required
-            />
+              <InputWithLabel
+                label="Terminal ID"
+                type="text"
+                placeholder="Enter Terminal ID"
+                value={parallex_id}
+                onChange={(e) => setParallexId(e.target.value)}
+                required
+              />
+            </fieldset>
 
             <button
               type="submit"
@@ -473,6 +501,14 @@ export default function RegistrationForm() {
           </form>
         </div>
       </div>
+      {loading && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-xl px-5 py-4 shadow-lg flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-700 font-medium">Processing...</span>
+          </div>
+        </div>
+      )}
     </>
   );
 }
