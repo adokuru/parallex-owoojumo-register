@@ -157,6 +157,8 @@ export default function RegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [accountName, setAccountName] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isValidating, setIsValidating] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; show: boolean }>({
     message: '',
     type: 'success',
@@ -242,6 +244,7 @@ export default function RegistrationForm() {
     setValidationError('');
 
     try {
+      setIsValidating(true);
       const { data } = await axiosInstance.post<ApiResponse<AccountValidationResponse>>(
         '/validate-account',
         {
@@ -262,8 +265,16 @@ export default function RegistrationForm() {
       showToast('Failed to validate account', 'error');
       setValidationError('Failed to validate account');
       return false;
+    } finally {
+      setIsValidating(false);
     }
   }, [selectedBank, accountNumber]);
+
+  useEffect(() => {
+    if (!selectedBank || accountNumber.length !== 10) return;
+    const t = setTimeout(() => { void validateBankAccount(); }, 500);
+    return () => clearTimeout(t);
+  }, [selectedBank, accountNumber, validateBankAccount]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -358,7 +369,7 @@ export default function RegistrationForm() {
 
         {/* Form */}
         <div className="px-5 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl mx-auto bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
             <fieldset disabled={loading} className="space-y-4">
               <InputWithLabel
                 label="First Name"
@@ -386,6 +397,10 @@ export default function RegistrationForm() {
                 onChange={(e) => setPhone(e.target.value)}
                 required
               />
+              {fieldErrors.phone && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.phone}</p>
+              )}
+              <div className="text-right text-xs text-gray-400">{phone.length}/11</div>
 
               <InputWithLabel
                 label="Email (Optional)"
@@ -460,12 +475,19 @@ export default function RegistrationForm() {
                 maxLength={10}
                 required
               />
+              {isValidating && (
+                <p className="text-xs text-gray-500">Validating account…</p>
+              )}
 
               {validationError && (
                 <p className="text-red-500 text-center text-sm mt-2">
                   {validationError}
                 </p>
               )}
+              {fieldErrors.account_number && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.account_number}</p>
+              )}
+              <div className="text-right text-xs text-gray-400">{accountNumber.length}/10</div>
 
               {accountName && (
                 <p className="text-green-600 text-center text-sm font-medium mt-2">
